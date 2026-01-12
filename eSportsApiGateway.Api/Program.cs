@@ -24,7 +24,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.RegisterOtel();
 builder.Services.AddSingleton<IWebCall, SitechWebCall>();
-builder.Services.AddSingleton<HttpClient>(x =>
+builder.Services.AddSingleton(x =>
 {
     var cfg = builder.Configuration.GetRequiredSection("SitecheSportsConfig");
     var baseUrl = cfg.GetValue<string>("BaseUrl") ?? throw new MissingFieldException("Sitech Base Url is missing from the config");
@@ -43,5 +43,8 @@ app.MapOpenApi();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
-app.MapScalarApiReference();
+app.MapScalarApiReference(options =>
+{
+    options.AddServer("https://pricing.sitechesports.com", "production");
+});
 app.Run();
