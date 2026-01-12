@@ -16,10 +16,13 @@ jobs:
       - run:
           name: Set image version
           command: |
-            BASE_VERSION=1.0.0
+            BASE_VERSION="1.0.0"
+
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
 
             if [ "$CIRCLE_BRANCH" = "main" ]; then
-              IMAGE_VERSION=$BASE_VERSION
+              PATCH=$((PATCH + 1))
+              IMAGE_VERSION="$MAJOR.$MINOR.$PATCH"
             else
               IMAGE_VERSION="$BASE_VERSION-dev.$CIRCLE_BUILD_NUM"
             fi
