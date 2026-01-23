@@ -1,24 +1,42 @@
 using eSportsApiGateway.Services;
+using eSportsApiGateway.Api.Models;
+using eSportsApiGateway.Api.Middleware;
+using eSportsApiGateway.Api.Services;
 using Scalar.AspNetCore;
 using Sitech.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 var AllowSpecificOrigins = "AllowSpecificOrigins";
 
+// Configure settings
+builder.Services.Configure<ApiKeySettings>(
+    builder.Configuration.GetSection("ApiKeySettings"));
+builder.Services.Configure<CorsSettings>(
+    builder.Configuration.GetSection("CorsSettings"));
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+// Register services
+builder.Services.AddSingleton<ICorsService, CorsService>();
+
+// Configure CORS with dynamic origin validation
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: AllowSpecificOrigins, policy =>
     {
+        policy.SetIsOriginAllowed(origin =>
+        {
+            var corsService = builder.Services.BuildServiceProvider()
+                .GetRequiredService<ICorsService>();
+            return corsService.IsOriginAllowed(origin);
+        });
         policy.AllowAnyHeader();
-        policy.AllowAnyOrigin();
         policy.AllowAnyMethod();
+        policy.AllowCredentials();
     });
 });
 
@@ -39,6 +57,10 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseCors(AllowSpecificOrigins);
+
+// Add API key authentication middleware
+app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
+
 app.MapOpenApi();
 app.UseHttpsRedirection();
 app.UseAuthorization();
